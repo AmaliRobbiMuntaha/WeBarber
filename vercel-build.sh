@@ -1,9 +1,6 @@
 #!/bin/bash
 set -e
 
-echo "Installing PHP dependencies..."
-composer install --no-dev --prefer-dist --optimize-autoloader
-
 echo "Installing Node dependencies..."
 npm ci
 

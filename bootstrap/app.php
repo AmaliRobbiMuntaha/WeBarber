@@ -17,7 +17,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        $exceptions->shouldRenderJsonWhen(
-            fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
+    $exceptions->render(function (\Throwable $e, Request $request) {
+        error_log(
+            "ORIGINAL LARAVEL ERROR: " .
+            get_class($e) . " - " .
+            $e->getMessage() . "\n" .
+            $e->getTraceAsString()
         );
-    })->create();
+
+        return response('Internal Server Error', 500);
+    });
+})->create();

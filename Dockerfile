@@ -14,6 +14,10 @@ WORKDIR /var/www/html
 
 COPY . .
 
+RUN mkdir -p /etc/secrets \
+    && cp certs/ca.pem /etc/secrets/ca.pem \
+    && chmod 644 /etc/secrets/ca.pem
+
 RUN composer install --no-dev --optimize-autoloader --no-interaction \
     && npm ci \
     && npm run build

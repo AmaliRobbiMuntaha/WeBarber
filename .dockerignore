@@ -5,7 +5,6 @@
 .github
 node_modules
 vendor
-certs
 storage/logs/*
 storage/framework/cache/*
 storage/framework/sessions/*

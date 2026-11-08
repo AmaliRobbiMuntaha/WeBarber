@@ -211,7 +211,7 @@
           <div>
             <p style="margin:0 0 .15rem;font-size:.68rem;font-weight:700;letter-spacing:.25em;text-transform:uppercase;color:#b8a060;">Services</p>
             <span style="font-size:.88rem;font-weight:550;color:#0a0a0a; margin-top:-.25rem;">Choose Service</span>
-            <span style="font-size:.8rem;font-weight:400;color:#aeaeb2;margin-left:.35rem;">(can choose more than one)</span>
+            <span style="font-size:.8rem;font-weight:400;color:#aeaeb2;margin-left:.35rem;">(Haircut &amp; Beard: max 1 each)</span>
           </div>
           {{-- Live summary: muncul saat ada yang dipilih --}}
           <div id="svc-summary" style="display:none;text-align:right;flex-shrink:0;">
@@ -231,23 +231,29 @@
             return 'Haircut & Styling';
           });
 
+          /* 'single' => true : hanya boleh pilih 1 service di kategori itu */
           $categoryMeta = [
-            'Haircut & Styling'    => ['eyebrow' => 'Haircut'],
-            'Beard & Shave'        => ['eyebrow' => 'Beard'],
-            'Hair & Scalp Treatment' => ['eyebrow' => 'Treatment'],
+            'Haircut & Styling'    => ['eyebrow' => 'Haircut',   'single' => true],
+            'Beard & Shave'        => ['eyebrow' => 'Beard',     'single' => true],
+            'Hair & Scalp Treatment' => ['eyebrow' => 'Treatment', 'single' => false],
           ];
         @endphp
 
         @foreach($grouped as $category => $categoryServices)
         @php
-          $meta = $categoryMeta[$category] ?? ['icon' => '•', 'eyebrow' => 'Services'];
+          $meta = $categoryMeta[$category] ?? ['eyebrow' => 'Services', 'single' => false];
         @endphp
 
         {{-- Category header --}}
         <div style="display:flex;align-items:center;gap:.6rem;margin-bottom:.75rem;{{ !$loop->first ? 'margin-top:1.5rem;' : '' }}">
           <div>
             <p style="margin:0;font-size:.65rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:#b8a060;line-height:1;">{{ $meta['eyebrow'] }}</p>
-            <p style="margin:.1rem 0 0;font-size:.9rem;font-weight:600;color:#0a0a0a;letter-spacing:-.3px;line-height:1.2; margin-top:.25rem;">{{ $category }}</p>
+            <p style="margin:.1rem 0 0;font-size:.9rem;font-weight:600;color:#0a0a0a;letter-spacing:-.3px;line-height:1.2; margin-top:.25rem;">
+              {{ $category }}
+              <span style="font-size:.72rem;font-weight:400;color:#aeaeb2;margin-left:.25rem;">
+                {{ $meta['single'] ? '(pilih 1)' : '(boleh lebih dari 1)' }}
+              </span>
+            </p>
           </div>
         </div>
 
@@ -257,6 +263,8 @@
           @php $checked = in_array($service->id, old('service_ids', [])); @endphp
           <label
             class="svc-card"
+            data-category="{{ $category }}"
+            data-single="{{ $meta['single'] ? '1' : '0' }}"
             data-price="{{ $service->price }}"
             data-duration="{{ $service->duration_minutes }}"
             style="position:relative;display:flex;flex-direction:column;gap:.4rem;padding:1rem 1.1rem;
@@ -473,8 +481,26 @@
       }
     });
 
-    card.addEventListener('click', () => {
-      cb.checked = !cb.checked;
+    card.addEventListener('click', (e) => {
+      // <label> membungkus checkbox; cegah klik ganda dari browser
+      e.preventDefault();
+
+      const willCheck = !cb.checked;
+
+      // Kategori single-select: batalkan service lain di kategori yang sama
+      if (willCheck && card.dataset.single === '1') {
+        cards.forEach(other => {
+          if (other !== card && other.dataset.category === card.dataset.category) {
+            const otherCb = other.querySelector('.svc-check');
+            if (otherCb.checked) {
+              otherCb.checked = false;
+              applyStyle(other, false);
+            }
+          }
+        });
+      }
+
+      cb.checked = willCheck;
       applyStyle(card, cb.checked);
       updateSummary();
     });
